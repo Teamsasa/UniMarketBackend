@@ -8,6 +8,8 @@ require (
 )
 
 require (
+	github.com/MicahParks/jwkset v0.5.18 // indirect
+	github.com/MicahParks/keyfunc/v3 v3.3.3 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.26 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.11 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.15 // indirect
@@ -18,6 +20,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
+	golang.org/x/time v0.5.0 // indirect
 )
 
 require (
