@@ -7,6 +7,7 @@ import (
 	"time"
 	"strings"
 	"strconv"
+	"database/sql"
 )
 
 type Product struct {
@@ -31,6 +32,10 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("getProducts called...")
 
+	// URLパスの一部を取得
+	path := strings.TrimPrefix(r.URL.Path, "/getProducts/")
+
+	// クエリのベース
 	query := `
 		SELECT 
 			products.id, products.user_id, products.name, products.description, products.image_url, products.price,
@@ -40,8 +45,19 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		INNER JOIN 
 			categories ON products.category_id = categories.id
 	`
+
+	var rows *sql.Rows
+	var err error
+
+	// パスパラメーターが空でない場合、LIKE検索を追加
+	if path != "" {
+		query += " WHERE products.name LIKE $1 OR products.description LIKE $1"
+		rows, err = db.Query(query, "%"+path+"%")
+	} else {
+		rows, err = db.Query(query)
+	}
+
 	// クエリを実行して、結果を取得
-	rows, err := db.Query(query)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error in query: %s", err), http.StatusInternalServerError)
 		return
