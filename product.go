@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -112,6 +113,15 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// URLからIDを抽出
+	path := r.URL.Path
+	segments := strings.Split(path, "/")
+	if len(segments) < 3 {
+		http.Error(w, "Invalid URL format", http.StatusBadRequest)
+		return
+	}
+	id := segments[2] // /editProduct/{id} の {id} 部分を取得
+
 	fmt.Println("editProduct called...")
 
 	// リクエストボディをデコード
@@ -158,7 +168,7 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d", i, i+1)
 	currentTime := time.Now()
 	params = append(params, currentTime)
-	params = append(params, product.ID)
+	params = append(params, id)
 
 	fmt.Println(query)
 	fmt.Println(params)
