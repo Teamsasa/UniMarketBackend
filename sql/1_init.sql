@@ -1,4 +1,6 @@
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS products;
 
 CREATE TABLE users (
   id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -27,8 +29,8 @@ CREATE TABLE products (
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-INSERT INTO users (id, email, password) VALUES
-  ('1', 'example', 'example');
+INSERT INTO users (id, username, email, created_at) VALUES
+  ('1', 'example', 'example', '2024-07-10 10:00:00');
 
 INSERT INTO categories (name) VALUES
 ('数学'),
