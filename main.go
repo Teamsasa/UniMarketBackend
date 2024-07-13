@@ -18,6 +18,10 @@ type User struct {
 	Password string
 }
 
+var cognitoRegion string
+var clientId string
+var jwksURL string
+
 func main() {
 
 	user := os.Getenv("POSTGRES_USER")
@@ -27,7 +31,15 @@ func main() {
 	dbname := os.Getenv("POSTGRES_DB")
 
 	if user == "" || password == "" || host == "" || port == "" || dbname == "" {
-		log.Fatal("環境変数が設定されていません")
+		log.Fatal("データベースの環境変数が設定されていません")
+	}
+
+	cognitoRegion = os.Getenv("COGNITO_REGION")
+	clientId = os.Getenv("COGNITO_CLIENT_ID")
+	jwksURL = os.Getenv("TOKEN_KEY_URL")
+
+	if cognitoRegion == "" || clientId == "" || jwksURL == "" {
+		log.Fatal("Cognitoの環境変数が設定されていません")
 	}
 
 	var err error
@@ -37,6 +49,12 @@ func main() {
 		log.Fatal(err)
 	}
 	http.HandleFunc("/", helloHandler)
+	http.HandleFunc("/signup", signup)
+	http.HandleFunc("/signin", signin)
+	http.HandleFunc("/checkemail", checkEmail)
+	http.HandleFunc("/resnedemail", resendEmail)
+	http.HandleFunc("/getProducts", getProducts)
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
