@@ -54,7 +54,7 @@ func main() {
 	http.HandleFunc("/signin", signin)
 	http.HandleFunc("/checkemail", checkEmail)
 	http.HandleFunc("/resnedemail", resendEmail)
-	http.HandleFunc("/getProducts", getProducts)
+	http.HandleFunc("/getProducts/", getProducts)
 	http.HandleFunc("/addProduct", addProduct)
 	http.HandleFunc("/editProduct/", editProduct)
 	http.HandleFunc("/deleteProduct/", deleteProduct)
