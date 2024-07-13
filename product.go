@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
+	"time"
 )
 
 type Product struct {
@@ -25,6 +26,9 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "GET method expected", http.StatusMethodNotAllowed)
 		return
 	}
+
+	fmt.Println("getProducts called...")
+
 	query := `
 		SELECT 
 			products.id, products.user_id, products.name, products.description, products.image_url, products.price,
@@ -66,5 +70,37 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error encoding response: %s", err), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+}
+
+func addProduct(w http.ResponseWriter, r *http.Request) {
+	// POSTリクエストのみ許可
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Println("addProduct called...")
+
+	// リクエストボディをデコード
+	var product Product
+	err := json.NewDecoder(r.Body).Decode(&product)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error decoding request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// リクエストボディの値をDBにINSERT
+	query := `
+		INSERT INTO products (user_id, name, description, image_url, price, category_id, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	_, err = db.Exec(query, product.UserID, product.Name, product.Description, product.ImageURL, product.Price, product.Category, product.Status, currentTime, currentTime)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error inserting into database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintln(w, "Product added successfully")
 }
