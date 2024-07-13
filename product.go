@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"strings"
-	"strconv"
 )
 
 type Product struct {
@@ -112,7 +111,7 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 
 	// PUTリクエストのみ許可
 	if r.Method != http.MethodPut {
-    http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -196,7 +195,7 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	// URLパスの一部を取得
 	path := strings.TrimPrefix(r.URL.Path, "/deleteProduct/")
-	
+
 	// パスパラメーターが空の場合はエラーを返す
 	if path == "" {
 		http.Error(w, "Product ID is missing", http.StatusBadRequest)
