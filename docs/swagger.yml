@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: UniMarket API
+  version: 1.0.0
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      responses:
+        '200':
+          description: OK
+
+  /signup:
+    post:
+      summary: User signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: test
+                password:
+                  type: string
+                  description: Password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character
+                  example: aA1!abcd
+                email:
+                  type: string
+                  description: Email address must be from a university domain
+                  example: test@example.ac.jp
+      responses:
+        '201':
+          description: User created
+          headers:
+            Set-Cookie:
+              description: Set username
+              schema:
+                type: string
+        '405':
+          description: Request method isn't POST
+        '400':
+          description: Invalid request payload or Missing required fields
+        '500':
+          description: Internal server error
+
+  
+  /signin:
+    post:
+      summary: User signin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: test
+                password:
+                  type: string
+                  example: aA1!abcd
+      responses:
+        '200':
+          description: User signed in
+          headers:
+            Set-Cookie:
+              description: Set cookies for idToken, accessToken and refreshToken and university
+              schema:
+                type: string
+        '405':
+          description: Request method isn't POST
+        '400':
+          description: Invalid request payload
+        '500':
+          description: Couldn't load cognito config or Couldn't get university identifier
+        '401':
+          description: Invalid username or password
+
+  /checkEmail:
+    post:
+      summary: Check if email address is valid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verificationCode:
+                  type: string  
+                  example: "123456"
+      parameters:
+        - $ref: '#/components/parameters/username'
+      responses:
+        '200':
+          description: Email verified
+        '405':
+          description: Request method isn't POST
+        '400':
+          description: Invalid request payload or Missing required fields
+        '500':
+          description: Couldn't load cognito config or Couldn't verify email
+  
+  /resendEmail:
+    post:
+      summary: Resend email verification code
+      parameters:
+        - $ref: '#/components/parameters/username'
+      responses:
+        '200':
+          description: Email verified
+        '405':
+          description: Request method isn't POST
+        '400':
+          description: Invalid request payload or Missing required fields
+        '500':
+          description: Couldn't load cognito config or Couldn't verify email
+
+components:
+  parameters:
+    idToken:
+      name: idToken
+      in: cookie
+      required: true
+      schema:
+        type: string
+    accessToken:
+      name: accessToken
+      in: cookie
+      required: true
+      schema:
+        type: string
+    refreshToken:
+      name: refreshToken
+      in: cookie
+      required: true
+      schema:
+        type: string
+    username:
+      name: username
+      in: cookie
+      required: true
+      schema:
+        type: string
+    university:
+      name: university
+      in: cookie
+      required: true
+      schema:
+        type: string
