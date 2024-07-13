@@ -55,6 +55,7 @@ func main() {
 	http.HandleFunc("/resnedemail", resendEmail)
 	http.HandleFunc("/getProducts", getProducts)
 	http.HandleFunc("/addProduct", addProduct)
+	http.HandleFunc("/editProduct", editProduct)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

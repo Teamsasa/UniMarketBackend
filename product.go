@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
 	"time"
 )
 
@@ -103,4 +103,72 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintln(w, "Product added successfully")
+}
+
+func editProduct(w http.ResponseWriter, r *http.Request) {
+	// PUTリクエストのみ許可
+	if r.Method != http.MethodPut {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Println("editProduct called...")
+
+	// リクエストボディをデコード
+	var product Product
+	err := json.NewDecoder(r.Body).Decode(&product)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error decoding request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// 更新するフィールドと値を保持するマップ
+	fieldsToUpdate := map[string]interface{}{}
+	if product.Name != "" {
+		fieldsToUpdate["name"] = product.Name
+	}
+	if product.Description != "" {
+		fieldsToUpdate["description"] = product.Description
+	}
+	if product.ImageURL != "" {
+		fieldsToUpdate["image_url"] = product.ImageURL
+	}
+	if product.Price != 0 {
+		fieldsToUpdate["price"] = product.Price
+	}
+	if product.Category != "" {
+		fieldsToUpdate["category_id"] = product.Category
+	}
+	if product.Status != "" {
+		fieldsToUpdate["status"] = product.Status
+	}
+
+	// SQLクエリとパラメータを動的に構築
+	query := "UPDATE products SET "
+	params := []interface{}{}
+	i := 1
+	for field, value := range fieldsToUpdate {
+		if i > 1 {
+			query += ", "
+		}
+		query += fmt.Sprintf("%s = $%d", field, i)
+		params = append(params, value)
+		i++
+	}
+	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d", i, i+1)
+	currentTime := time.Now()
+	params = append(params, currentTime)
+	params = append(params, product.ID)
+
+	fmt.Println(query)
+	fmt.Println(params)
+
+	// データベースを更新
+	_, err = db.Exec(query, params...)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error updating database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
