@@ -240,7 +240,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	createdAt := time.Now()
 
 	// サインアップ成功後にユーザー情報をデータベースに挿入
-	stmt, err := db.Prepare("INSERT INTO users (id, username, email, created_at) VALUES (?, ?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO users (id, username, email, created_at) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		log.Println("Database prepare statement error:", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -325,11 +325,27 @@ func signin(w http.ResponseWriter, r *http.Request) {
 	accessToken := authResp.AuthenticationResult.AccessToken
 	refreshToken := authResp.AuthenticationResult.RefreshToken
 
+	// 大学の識別子を取得
+	jwtIdToken, err := parseToken(*idToken)
+	if err != nil {
+		http.Error(w, "token parse faild", http.StatusInternalServerError)
+		log.Println("token parse faild:", err)
+		return
+	}
+	email, err := getValueFromToken(jwtIdToken, "email")
+	if err != nil {
+		http.Error(w, "coudn't get key's value from claim", http.StatusInternalServerError)
+		log.Println("coudn't get key's value from claim:", err)
+		return
+	}
+	splited_filed := strings.Split(strings.Split(email, "@")[1], ".")
+	university := splited_filed[len(splited_filed)-3]
+
 	// トークンをクッキーに保存
 	http.SetCookie(w, &http.Cookie{
 		Name:     "idToken",
 		Value:    *idToken,
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(24 * 7 * time.Hour),
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
@@ -337,7 +353,7 @@ func signin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "accessToken",
 		Value:    *accessToken,
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(24 * 7 * time.Hour),
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
@@ -345,7 +361,15 @@ func signin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refreshToken",
 		Value:    *refreshToken,
-		Expires:  time.Now().Add(24 * 60 * time.Hour),
+		Expires:  time.Now().Add(24 * 90 * time.Hour),
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "university",
+		Value:    university,
+		Expires:  time.Now().Add(24 * 7 * time.Hour),
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
