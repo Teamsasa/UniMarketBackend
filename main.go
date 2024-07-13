@@ -14,8 +14,9 @@ var db *sql.DB
 
 type User struct {
 	ID       string
+	Username string
 	Email    string
-	Password string
+	CreatedAt string
 }
 
 var cognitoRegion string
@@ -55,6 +56,7 @@ func main() {
 	http.HandleFunc("/resnedemail", resendEmail)
 	http.HandleFunc("/getProducts", getProducts)
 	http.HandleFunc("/addProduct", addProduct)
+	http.HandleFunc("/deleteProduct/", deleteProduct)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -63,11 +65,11 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("handler called...")
 
 	var user User
-	err := db.QueryRow("SELECT id, email, password FROM users WHERE id = $1", "1").Scan(&user.ID, &user.Email, &user.Password)
+	err := db.QueryRow("SELECT id, username, email, created_at  FROM users WHERE id = $1", "1").Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
 	if err != nil {
 		fmt.Printf("error in query: %s", err)
 		return
 	}
 
-	fmt.Fprintf(w, "id: %s, email: %s, password: %s", user.ID, user.Email, user.Password)
+	fmt.Fprintf(w, "id: %s, username: %s, email: %s, created_at: %s", user.ID, user.Username, user.Email, user.CreatedAt)
 }
