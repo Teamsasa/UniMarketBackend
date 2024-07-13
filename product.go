@@ -20,6 +20,11 @@ type Product struct {
 }
 
 func getProducts(w http.ResponseWriter, r *http.Request) {
+	// GETリクエストのみ許可
+	if r.Method != http.MethodGet {
+		http.Error(w, "GET method expected", http.StatusMethodNotAllowed)
+		return
+	}
 	query := `
 		SELECT 
 			products.id, products.user_id, products.name, products.description, products.image_url, products.price,
