@@ -8,19 +8,22 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// トークンを検証し、パースされたトークンを返す
-func parseTokenFromCookie(r *http.Request, cookieName string) (*jwt.Token, error) {
+// cookieからトークンを取得
+func getTokenFromCookie(r *http.Request, cookieName string) (string, error) {
 	// クッキーからトークンを取得
 	c, err := r.Cookie(cookieName)
 	if err != nil {
 		if err == http.ErrNoCookie {
-			return nil, fmt.Errorf("%vが見つかりません: %v", cookieName, err)
+			return "", fmt.Errorf("%vが見つかりません: %v", cookieName, err)
 		}
-		return nil, fmt.Errorf("不正なリクエスト：クッキーの取得エラー: %v", err)
+		return "", fmt.Errorf("不正なリクエスト：クッキーの取得エラー: %v", err)
 	}
 
-	tknStr := c.Value
+	return c.Value, nil
+}
 
+// トークンを取得し検証
+func parseToken(tknStr string) (*jwt.Token, error) {
 	// JWKセットを指定されたURLから取得
 	jwks, err := keyfunc.NewDefault([]string{jwksURL})
 	if err != nil {
@@ -41,10 +44,13 @@ func parseTokenFromCookie(r *http.Request, cookieName string) (*jwt.Token, error
 	return token, nil
 }
 
-// トークンを検証し、有効であればtrueを返す
-func validateIDToken(r *http.Request) error {
-	// クッキーからトークンを取得
-	_, err := parseTokenFromCookie(r, "accessToken")
+// トークンを検証する
+func validateAccessToken(r *http.Request) error {
+	accessToken, err := getTokenFromCookie(r, "accessToken")
+	if err != nil {
+		return err
+	}
+	_, err = parseToken(accessToken)
 	if err != nil {
 		return err
 	}
@@ -57,13 +63,7 @@ func validateIDToken(r *http.Request) error {
  * username -> "cognito:username"
  * email -> "email"
  */
-func getValueFromToken(r *http.Request, claimKey string) (string, error) {
-	// クッキーからトークンを取得
-	token, err := parseTokenFromCookie(r, "idToken")
-	if err != nil {
-		return "", err
-	}
-
+func getValueFromToken(token *jwt.Token, claimKey string) (string, error) {
 	// クレームから指定されたキーの値を取得
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if value, ok := claims[claimKey].(string); ok {
