@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
-	"time"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 	"database/sql"
 )
 
@@ -123,18 +123,105 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Product added successfully")
 }
 
+func editProduct(w http.ResponseWriter, r *http.Request) {
+
+	// PUTリクエストのみ許可
+	if r.Method != http.MethodPut {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// URLからIDを抽出
+	path := r.URL.Path
+	segments := strings.Split(path, "/")
+	if len(segments) < 3 {
+		http.Error(w, "Invalid URL format", http.StatusBadRequest)
+		return
+	}
+	id := segments[2] // /editProduct/{id} の {id} 部分を取得
+
+	fmt.Println("editProduct called...")
+
+	// リクエストボディをデコード
+	var product Product
+	err := json.NewDecoder(r.Body).Decode(&product)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error decoding request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// 更新するフィールドと値を保持するマップ
+	fieldsToUpdate := map[string]interface{}{}
+	if product.Name != "" {
+		fieldsToUpdate["name"] = product.Name
+	}
+	if product.Description != "" {
+		fieldsToUpdate["description"] = product.Description
+	}
+	if product.ImageURL != "" {
+		fieldsToUpdate["image_url"] = product.ImageURL
+	}
+	if product.Price != 0 {
+		fieldsToUpdate["price"] = product.Price
+	}
+	if product.Category != "" {
+		fieldsToUpdate["category_id"] = product.Category
+	}
+	if product.Status != "" {
+		fieldsToUpdate["status"] = product.Status
+	}
+
+	// SQLクエリとパラメータを動的に構築
+	query := "UPDATE products SET "
+	params := []interface{}{}
+	i := 1
+	for field, value := range fieldsToUpdate {
+		if i > 1 {
+			query += ", "
+		}
+		query += fmt.Sprintf("%s = $%d", field, i)
+		params = append(params, value)
+		i++
+	}
+	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d", i, i+1)
+	currentTime := time.Now()
+	params = append(params, currentTime)
+	params = append(params, id)
+
+	// データベースを更新
+	result, err := db.Exec(query, params...)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error updating database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 影響を受けた行の数を確認
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error checking affected rows: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 更新された行がない場合はエラーを返す
+	if rowsAffected == 0 {
+		http.Error(w, "no rows updated", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func deleteProduct(w http.ResponseWriter, r *http.Request) {
 	// DELETEリクエストのみ許可
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
-
 	fmt.Println("deleteProduct called...")
 
 	// URLパスの一部を取得
 	path := strings.TrimPrefix(r.URL.Path, "/deleteProduct/")
-	
+
 	// パスパラメーターが空の場合はエラーを返す
 	if path == "" {
 		http.Error(w, "Product ID is missing", http.StatusBadRequest)

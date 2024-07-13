@@ -119,6 +119,58 @@ paths:
           description: Invalid request payload or Missing required fields
         '500':
           description: Couldn't load cognito config or Couldn't verify email
+  
+  /editProduct/{id}:
+    put:
+      summary: Edit a product's details
+      description: Updates the details of an existing product by ID.
+      operationId: editProduct
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the product to update.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the product.
+                description:
+                  type: string
+                  description: The description of the product.
+                imageURL:
+                  type: string
+                  description: The URL of the product image.
+                price:
+                  type: number
+                  format: float
+                  description: The price of the product.
+                category:
+                  type: string
+                  description: The category of the product.
+                status:
+                  type: string
+                  description: The status of the product.
+      responses:
+        "204":
+          description: No Content - Successfully updated the product.
+        "400":
+          description: Bad Request - The request was invalid.
+        "404":
+          description: Not Found - The product was not found.
+        "405":
+          description: Method Not Allowed - Use PUT method.
+        "500":
+          description: Internal Server Error - Error updating the product in the database.
 
 components:
   parameters:
