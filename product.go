@@ -172,13 +172,23 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	params = append(params, currentTime)
 	params = append(params, id)
 
-	fmt.Println(query)
-	fmt.Println(params)
-
 	// データベースを更新
-	_, err = db.Exec(query, params...)
+	result, err := db.Exec(query, params...)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error updating database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 影響を受けた行の数を確認
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error checking affected rows: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 更新された行がない場合はエラーを返す
+	if rowsAffected == 0 {
+		http.Error(w, "no rows updated", http.StatusBadRequest)
 		return
 	}
 

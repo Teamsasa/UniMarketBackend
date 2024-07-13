@@ -13,9 +13,9 @@ import (
 var db *sql.DB
 
 type User struct {
-	ID       string
-	Username string
-	Email    string
+	ID        string
+	Username  string
+	Email     string
 	CreatedAt string
 }
 
@@ -57,7 +57,7 @@ func main() {
 	http.HandleFunc("/getProducts", getProducts)
 	http.HandleFunc("/addProduct", addProduct)
 	http.HandleFunc("/editProduct/", editProduct)
-  http.HandleFunc("/deleteProduct/", deleteProduct)
+	http.HandleFunc("/deleteProduct/", deleteProduct)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
