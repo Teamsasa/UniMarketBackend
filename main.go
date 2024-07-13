@@ -53,6 +53,7 @@ func main() {
 	http.HandleFunc("/signin", signin)
 	http.HandleFunc("/checkemail", checkEmail)
 	http.HandleFunc("/resnedemail", resendEmail)
+	http.HandleFunc("/getProducts", getProducts)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
