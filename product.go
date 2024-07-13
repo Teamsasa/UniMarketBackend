@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strings"
+	"strconv"
 )
 
 type Product struct {
@@ -107,9 +109,10 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func editProduct(w http.ResponseWriter, r *http.Request) {
+
 	// PUTリクエストのみ許可
 	if r.Method != http.MethodPut {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+    http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -181,4 +184,52 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func deleteProduct(w http.ResponseWriter, r *http.Request) {
+	// DELETEリクエストのみ許可
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+	fmt.Println("deleteProduct called...")
+
+	// URLパスの一部を取得
+	path := strings.TrimPrefix(r.URL.Path, "/deleteProduct/")
+	
+	// パスパラメーターが空の場合はエラーを返す
+	if path == "" {
+		http.Error(w, "Product ID is missing", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(path)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// 商品IDを元にDBから商品を削除
+	query := `DELETE FROM products WHERE id = $1`
+	result, err := db.Exec(query, id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error deleting from database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 削除された行数を取得
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error fetching affected rows: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 削除された行数が0の場合はエラーを返す
+	if rowsAffected == 0 {
+		http.Error(w, "No product found with the given ID", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Product deleted successfully")
 }
