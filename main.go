@@ -58,6 +58,7 @@ func main() {
 	http.HandleFunc("/addProduct", addProduct)
 	http.HandleFunc("/editProduct/", editProduct)
 	http.HandleFunc("/deleteProduct/", deleteProduct)
+	http.HandleFunc("/getImages/", getImages)
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 

@@ -124,6 +124,8 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	product.ImageURL = "./images/default.jpg"
+
 	// リクエストボディの値をDBにINSERT
 	query := `
 		INSERT INTO products (user_id, name, description, image_url, price, category_id, status, university, created_at, updated_at)
@@ -289,4 +291,45 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "Product deleted successfully")
+}
+
+func getImages(w http.ResponseWriter, r *http.Request) {
+	// GETリクエストのみ許可
+	if r.Method != http.MethodGet {
+		http.Error(w, "GET method expected", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Println("getImages called...")
+
+	// IDをURLから取得
+	idStr := strings.TrimPrefix(r.URL.Path, "/getImages/")
+	if idStr == "" {
+		http.Error(w, "Invalid URL format", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("ID:", id)
+	// クエリのベース
+	query := `SELECT image_url FROM products WHERE id = $1`
+
+	// クエリを実行して、結果を取得
+	var imageUrl string
+	err = db.QueryRow(query, id).Scan(&imageUrl)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "No image found for the given ID", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 画像を返す
+	http.ServeFile(w, r, imageUrl)
 }
