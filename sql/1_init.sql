@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS chat_history;
 
 CREATE TABLE users (
   id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -27,4 +28,10 @@ CREATE TABLE products (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+CREATE TABLE chat_history (
+  id SERIAL PRIMARY KEY NOT NULL,
+  sender TEXT,
+  content TEXT
 );

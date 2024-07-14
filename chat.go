@@ -43,9 +43,41 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	// 送られてきたGETリクエストをWebSocketにアップグレード
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		// エラーが発生した場合、exitはせずに関数から抜ける
 		log.Fatal(err)
 	}
 	defer ws.Close()
+
+	// データベースから過去のメッセージを取得
+	rows, err := db.Query("SELECT id, sender, content FROM chat_history")
+	if err != nil {
+		log.Println("error in query: ", err)
+		delete(clients, ws)
+		return
+	}
+
+	// チャット履歴を構造体の配列に格納
+	chat_historys := []Message{}
+	for rows.Next() {
+		var chat_history Message
+		err := rows.Scan(&chat_history.ID, &chat_history.Sender, &chat_history.Content)
+		if err != nil {
+			log.Println("error in scan: ", err)
+			return
+		}
+		chat_historys = append(chat_historys, chat_history)
+	}
+
+	// チャット履歴をクライアントに送信
+	SendContent := sendHistory{
+		Type: "history",
+		Data: chat_historys,
+	}
+	err = ws.WriteJSON(SendContent)
+	if err != nil {
+		log.Printf("error: %v", err)
+		return
+	}
 
 	// クライアントを登録
 	clients[ws] = true
@@ -71,6 +103,13 @@ func handleMessages() {
 	for {
 		// broadcastチャネルから次のメッセージを受け取る
 		message := <-broadcast
+
+		// メッセージをデータベースに保存
+		_, err := db.Exec("INSERT INTO chat_history (sender, content) VALUES ($1, $2)", message.Sender, message.Content)
+		if err != nil {
+			log.Println("error in insert: ", err)
+			continue
+		}
 
 		SendContent := SendMessage{
 			Type: "message",
