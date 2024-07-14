@@ -77,7 +77,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var product Product
 		err := rows.Scan(&product.ID, &product.UserID, &product.Name, &product.Description, &product.ImageURL, &product.Price,
-			&product.Category, &product.Status, &product.CreatedAt, &product.UpdatedAt)
+			&product.Category, &product.Status, &product.University, &product.CreatedAt, &product.UpdatedAt)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error scanning row: %s", err), http.StatusInternalServerError)
 			return
@@ -207,10 +207,11 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 		params = append(params, value)
 		i++
 	}
-	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d AND university = $%s", i, i+1, university)
+	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d AND university = $%d", i, i+1, i+2)
 	currentTime := time.Now()
 	params = append(params, currentTime)
 	params = append(params, id)
+	params = append(params, university)
 
 	// データベースを更新
 	result, err := db.Exec(query, params...)
