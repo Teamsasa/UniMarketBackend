@@ -25,6 +25,17 @@ type Product struct {
 }
 
 func getProducts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:9000")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	// プリフライトリクエスト
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	// GETリクエストのみ許可
 	if r.Method != http.MethodGet {
 		http.Error(w, "GET method expected", http.StatusMethodNotAllowed)

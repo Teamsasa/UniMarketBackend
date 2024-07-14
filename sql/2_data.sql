@@ -1,5 +1,6 @@
 INSERT INTO users (id, username, email, created_at) VALUES
-  ('1', 'example', 'example', '2024-07-10 10:00:00');
+  ('1', 'example', 'example', '2024-07-10 10:00:00'),
+  ('2', 'test', 'uchiyama.y.ae@m.titech.ac.jp', '2024-07-10 10:00:00');
 
 INSERT INTO categories (name) VALUES
 ('数学'),
