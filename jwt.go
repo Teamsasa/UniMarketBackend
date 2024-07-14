@@ -8,8 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// cookieからトークンを取得
-func getTokenFromCookie(r *http.Request, cookieName string) (string, error) {
+// cookieから値を取得
+func getCookie(r *http.Request, cookieName string) (string, error) {
 	// クッキーからトークンを取得
 	c, err := r.Cookie(cookieName)
 	if err != nil {
@@ -46,7 +46,7 @@ func parseToken(tknStr string) (*jwt.Token, error) {
 
 // トークンを検証する
 func validateAccessToken(r *http.Request) error {
-	accessToken, err := getTokenFromCookie(r, "accessToken")
+	accessToken, err := getCookie(r, "accessToken")
 	if err != nil {
 		return err
 	}
