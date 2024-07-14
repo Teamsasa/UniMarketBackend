@@ -58,6 +58,8 @@ func main() {
 	http.HandleFunc("/addProduct", addProduct)
 	http.HandleFunc("/editProduct/", editProduct)
 	http.HandleFunc("/deleteProduct/", deleteProduct)
+	http.HandleFunc("/ws", handleConnections)
+	go handleMessages()
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
