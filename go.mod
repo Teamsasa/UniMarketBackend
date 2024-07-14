@@ -28,4 +28,5 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider v1.41.4
 	github.com/aws/smithy-go v1.20.3 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/gorilla/websocket v1.5.3
 )
