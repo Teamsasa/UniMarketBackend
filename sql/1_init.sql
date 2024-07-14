@@ -24,6 +24,7 @@ CREATE TABLE products (
   price DECIMAL(10, 2) NOT NULL,
   category_id INTEGER NOT NULL,
   status VARCHAR(50) NOT NULL DEFAULT 'available',
+  university VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),

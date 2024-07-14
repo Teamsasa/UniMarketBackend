@@ -1,13 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-	"database/sql"
 )
 
 type Product struct {
@@ -19,6 +19,7 @@ type Product struct {
 	Price       float64 `json:"price"`
 	Category    string  `json:"category"`
 	Status      string  `json:"status"`
+	University  string  `json:"university"`
 	CreatedAt   string  `json:"created_at"`
 	UpdatedAt   string  `json:"updated_at"`
 }
@@ -39,7 +40,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT 
 			products.id, products.user_id, products.name, products.description, products.image_url, products.price,
-			categories.name AS category, products.status, products.created_at, products.updated_at
+			categories.name AS category, products.status, university, products.created_at, products.updated_at
 		FROM 
 			products
 		INNER JOIN 
@@ -64,6 +65,13 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
+	// cookieから大学を取得
+	university, err := getCookie(r, "university")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error getting university from cookie: %s", err), http.StatusBadRequest)
+		return
+	}
+
 	// 1行ずつ取得して、Product構造体に詰めていく
 	var products []Product
 	for rows.Next() {
@@ -74,7 +82,9 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("error scanning row: %s", err), http.StatusInternalServerError)
 			return
 		}
-		products = append(products, product)
+		if product.University == university {
+			products = append(products, product)
+		}
 	}
 	if err := rows.Err(); err != nil {
 		http.Error(w, fmt.Sprintf("error in rows iteration: %s", err), http.StatusInternalServerError)
@@ -107,13 +117,20 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// cookieから大学を取得
+	university, err := getCookie(r, "university")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error getting university from cookie: %s", err), http.StatusBadRequest)
+		return
+	}
+
 	// リクエストボディの値をDBにINSERT
 	query := `
-		INSERT INTO products (user_id, name, description, image_url, price, category_id, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO products (user_id, name, description, image_url, price, category_id, status, university, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
-	_, err = db.Exec(query, product.UserID, product.Name, product.Description, product.ImageURL, product.Price, product.Category, product.Status, currentTime, currentTime)
+	_, err = db.Exec(query, product.UserID, product.Name, product.Description, product.ImageURL, product.Price, product.Category, product.Status, university, currentTime, currentTime)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error inserting into database: %s", err), http.StatusInternalServerError)
 		return
@@ -142,9 +159,16 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("editProduct called...")
 
+	// cookieから大学を取得
+	university, err := getCookie(r, "university")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error getting university from cookie: %s", err), http.StatusBadRequest)
+		return
+	}
+
 	// リクエストボディをデコード
 	var product Product
-	err := json.NewDecoder(r.Body).Decode(&product)
+	err = json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error decoding request body: %s", err), http.StatusBadRequest)
 		return
@@ -183,7 +207,7 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 		params = append(params, value)
 		i++
 	}
-	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d", i, i+1)
+	query += fmt.Sprintf(", updated_at = $%d WHERE id = $%d AND university = $%s", i, i+1, university)
 	currentTime := time.Now()
 	params = append(params, currentTime)
 	params = append(params, id)
@@ -198,7 +222,7 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	// 影響を受けた行の数を確認
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error checking affected rows: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("error checking affected rows: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -234,9 +258,16 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// cookieから大学を取得
+	university, err := getCookie(r, "university")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error getting university from cookie: %s", err), http.StatusBadRequest)
+		return
+	}
+
 	// 商品IDを元にDBから商品を削除
-	query := `DELETE FROM products WHERE id = $1`
-	result, err := db.Exec(query, id)
+	query := `DELETE FROM products WHERE id = $1 AND university = $2`
+	result, err := db.Exec(query, id, university)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error deleting from database: %s", err), http.StatusInternalServerError)
 		return
@@ -245,7 +276,7 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 	// 削除された行数を取得
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error fetching affected rows: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("error fetching affected rows: %s", err), http.StatusBadRequest)
 		return
 	}
 
