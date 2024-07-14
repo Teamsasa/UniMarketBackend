@@ -205,7 +205,7 @@ paths:
         '500':
           description: Error deleting from database or error fetching affected rows
 
-  /getProducts/{searchQuery}:
+  /getProducts:
     get:
       summary: Retrieve products
       description: Retrieves a list of products from the database. Can filter products based on a search query included in the URL path.
